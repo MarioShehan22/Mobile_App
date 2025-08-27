@@ -1,50 +1,101 @@
-# Welcome to your Expo app 👋
+# 📌 Task Management App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A **cross-platform (iOS/Android/Web)** task manager built with **Expo + React Native + Firebase**.  
+It combines classic to-do features with **context-aware automation**.
 
-## Get started
+---
 
-1. Install dependencies
+## ✨ Features
 
-   ```bash
-   npm install
-   ```
+- 📆 **Calendar-first UI** → tap any date to see that day’s tasks.
+- ⏰ **Time reminders** → notifications at **T-24h, T-6h, T-1h**.
+- 📍 **Location reminders** → geofence alerts when within ~1 km of task location.
+- 🌧️ **Weather awareness** → rain forecast reminders (umbrella tips).
+- 🔄 **Realtime sync** with Firestore (per-user).
+- 🖥️ **Web compatibility** with graceful fallbacks.
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 🏗️ Architecture & Flow
 
-In the output, you'll find options to open the app in a
+### 🔑 Auth & Data
+- Firebase Auth for user authentication.
+- Firestore `tasks` collection per-user (`userId` based filtering).
+- Optional `locations` collection for saved places.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### 📝 Task Creation / Edit
+- Fields: `title`, `dueDate`, `dueTime`, `priority`.
+- Toggles: **Location**, **Weather**.
+- Location Picker: type-ahead (Geoapify / LocationIQ / OpenCage) or GPS + reverse geocode.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### ⚙️ Automations
+- **Time notifications** → scheduled at 24h / 6h / 1h.
+- **Geofence notifications** → background geofencing via `expo-task-manager`.
+- **Weather tip** → pre-check with OpenWeather and schedule umbrella reminders.
 
-## Get a fresh project
+### 📅 Calendar & Filters
+- Uses `react-native-calendars`.
+- Filters: **All**, **Today**, **Overdue** + date-specific lists.
 
-When you're ready, run:
+### 🌐 Web Compatibility
+- Native pickers replaced by text input (`YYYY-MM-DD` / `HH:mm`).
+- Geofencing disabled on web (other logic intact).
 
-```bash
-npm run reset-project
+---
+
+## 🗄️ Data Model (Firestore)
+
+### Tasks
+```json
+{
+  "id": "string",
+  "userId": "string",
+  "title": "string",
+  "dueDate": "YYYY-MM-DD",
+  "dueTime": "HH:mm",
+  "priority": "high|medium|low",
+  "isCompleted": false,
+  "hasLocation": true,
+  "hasWeather": true,
+  "location": { "description": "string", "lat": 0, "lng": 0, "radius": 1000 },
+  "notificationIds": { "minus24": "id", "minus6": "id", "minus1": "id", "umbrella": "id" },
+  "geofenceId": "string",
+  "createdAt": "<Firestore Timestamp>"
+}
+```
+### Locations
+```json
+{
+  "userId": "string",
+  "label": "string",
+  "description": "string",
+  "lat": 0,
+  "lng": 0,
+  "createdAt": "<Timestamp>",
+  "lastUsedAt": "<Timestamp>"
+}
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Technology
 
-## Learn more
+- **Framework**: Expo SDK 53, React Native, Expo Router
 
-To learn more about developing your project with Expo, look at the following resources:
+- **State & Realtime**: Firebase Firestore (web SDK), live queries (onSnapshot)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- **Auth**: Firebase Auth (Native: initializeAuth with AsyncStorage persistence, Web: getAuth)
 
-## Join the community
+- **Notifications**: expo-notifications (local scheduling)
 
-Join our community of developers creating universal apps.
+- **Location & Geofencing**: expo-location, expo-task-manager
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **Calendar UI**: react-native-calendars
+
+- **Date/Time Input**: @react-native-community/datetimepicker (native) + text fallback (web)
+
+- **Weather**: OpenWeather (Current Weather / One Call as available)
+
+- **Geocoding/Autocomplete**: Geoapify / LocationIQ / OpenCage (free tiers; pick one)
+
+- **Styling**: React Native StyleSheet with a clean, modern, accessible layout
+
+- **Testing**: Jest + Testing Library with mocks for Firebase and Expo modules (optional setup provided)

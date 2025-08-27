@@ -1,14 +1,14 @@
 import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import {createBottomTabNavigator} from "@react-navigation/bottom-tabs/src";
-import HomeGuideScreen from '@/components/ui/screen/home/HomeGuideScreen';
-import HomePageScreen from '@/components/ui/screen/home/HomePageScreen';
-import HomeTourScreen from '@/components/ui/screen/home/HomeTourScreen';
-import HomeLocationScreen from '@/components/ui/screen/home/HomeLocationScreen';
-import HomeBookingScreen from '@/components/ui/screen/home/HomeBookingScreen';
+import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
+import TaskListScreen from '@/components/ui/screen/home/TaskListScreen';
 import {Ionicons} from '@expo/vector-icons';
 import {Color} from '@/constants/Colors';
 import React, {useEffect, useState} from 'react';
+import CalendarTaskScreen from "@/components/ui/screen/home/CalendarTaskScreen";
+import LocationPickerScreen from "@/components/ui/screen/home/LocationPickerScreen";
+import ProfileScreen from "@/components/ui/screen/home/ProfileScreen";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import WeatherScreen from "@/components/ui/screen/home/WeatherScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -23,71 +23,60 @@ export default function HomeBottomTabNavigation({navigation}: any) {
         loadToken();
     }, []);
 
-    const getTabBarIcon = (routeName: string, focused: boolean, color: string) => {
-        const iconSize = 20;
-        const icons: {[key: string]: string} = {
-            Book: focused ? 'book' : 'book-outline',
-            Location: focused ? 'location' : 'location-outline',
-            Home: focused ? 'home' : 'home-outline',
-            Tour: focused ? 'car' : 'car-outline',
-            Guide: focused ? 'person' : 'person-outline',
-        };
-        // @ts-ignore
-        return <Ionicons name={icons[routeName]} size={iconSize} color={color} />;
-    };
-
     // @ts-ignore
     return (
         <Tab.Navigator
-            initialRouteName="Home"
-            screenOptions={({route}) => ({
-                tabBarIcon: ({focused, color}) => getTabBarIcon(route.name, focused, color),
+            initialRouteName="Tasks"
+            screenOptions={({ route }) => ({
+                tabBarIcon: ({ focused, color }) => {
+                    let iconName = '';
+
+                    switch (route.name) {
+                        case 'Tasks':
+                            iconName = focused ? 'checkmark-done' : 'list-outline';
+                            break;
+                        case 'Calendar':
+                            iconName = focused ? 'calendar' : 'calendar-outline';
+                            break;
+                        case 'Weather':
+                            iconName = focused ? 'cloudy' : 'rainy-outline';
+                            break;
+                        case 'Location':
+                            iconName = focused ? 'navigate' : 'navigate-outline';
+                            break;
+                        case 'Profile':
+                            iconName = focused ? 'person-circle' : 'person-circle-outline';
+                            break;
+                    }
+
+                    // @ts-ignore
+                    return <Ionicons name={iconName} size={20} color={color} />;
+                },
                 tabBarActiveTintColor: Color.blue,
                 tabBarInactiveTintColor: Color.darkGray,
-            })}>
-            {/* Tab Screens */}
+            })}
+        >
+            <Tab.Screen name="Tasks" component={TaskListScreen} />
+            <Tab.Screen name="Calendar" component={CalendarTaskScreen} />
+            <Tab.Screen name="Weather" component={WeatherScreen} />
+            <Tab.Screen name="Location" component={LocationPickerScreen} />
             <Tab.Screen
-                name="Book"
-                component={HomeBookingScreen}
+                name="Profile"
+                component={ProfileScreen}
                 options={{
-                    headerLeft: () => (
-                        <View style={styles.header}>
-                            <Text style={styles.headerTitle}>My Bookings</Text>
-                        </View>
-                    ),
-                    headerTitle: '',
-                }}
-            />
-            <Tab.Screen name="Location" component={HomeLocationScreen} />
-            <Tab.Screen
-                name="Home"
-                component={HomePageScreen}
-                options={{
-                    headerLeft: () => (
-                        <View style={styles.headerLeftContainer}>
-                            <Text style={styles.greetingText}>
-                                Hi, <Text style={styles.userName}>David</Text>{' '}
-                                <Text style={styles.waveEmoji}>👋</Text>
-                            </Text>
-                        </View>
-                    ),
-                    headerTitle: '',
                     headerRight: () => (
-                        <View style={styles.headerRightContainer}>
-                            <TouchableOpacity
-                                style={styles.profileAvatarContainer}
-                                onPress={() => navigation.navigate(token ? 'TouristProfile' : 'Login')}>
-                                <Image
-                                    source={require('../../../assets/images/avatar/image 1.png')}
-                                    style={styles.profileAvatar}
-                                />
-                            </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity
+                            style={styles.profileAvatarContainer}
+                            onPress={() => navigation.navigate(token ? 'ProfileScreen' : 'Login')}
+                        >
+                            <Image
+                                source={{ uri: 'https://icons.veryicon.com/png/o/miscellaneous/user-avatar/user-avatar-male-5.png' }}
+                                style={styles.profileAvatar}
+                            />
+                        </TouchableOpacity>
                     ),
                 }}
             />
-            <Tab.Screen name="Tour" component={HomeTourScreen} />
-            <Tab.Screen name="Guide" component={HomeGuideScreen} />
         </Tab.Navigator>
     );
 }
