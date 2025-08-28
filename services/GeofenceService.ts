@@ -2,6 +2,7 @@ import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { ensureLocationPermissions } from '@/services/permissions';
 
 export const GEOFENCE_TASK = 'task-geofencing';
 
@@ -36,8 +37,6 @@ TaskManager.defineTask(GEOFENCE_TASK, ({ data, error }) => {
         });
     }
 
-    // If you still want to use state for some reason:
-    // if ((data as any)?.state === Location.GeofencingRegionState.Inside) { ... }
     return;
 });
 
@@ -50,17 +49,15 @@ export async function requestLocationPermissions() {
 }
 
 export async function startGeofenceForTask(task: {
-    id: string;
-    title: string;
-    location: { lat: number; lng: number; radius?: number };
+    id: string; title: string; location: { lat: number; lng: number; radius?: number }
 }) {
     if (Platform.OS === 'web') return undefined;
 
-    const ok = await requestLocationPermissions();
-    if (!ok) return undefined;
+    const ok = await ensureLocationPermissions({ needsBackground: true });
+    if (!ok) return;
 
     const radius = task.location.radius ?? 1000; // 1km default
-    // Keep identifier short; iOS limits length
+
     const identifier = JSON.stringify({ taskId: task.id, title: task.title }).slice(0, 200);
 
     await Location.startGeofencingAsync(GEOFENCE_TASK, [

@@ -54,7 +54,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
                 />
             </View>
         </ImageBackground>
-
     );
 }
 

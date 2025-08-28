@@ -6,14 +6,25 @@ import {
     TouchableOpacity,
     StyleSheet,
     Alert,
-    ActivityIndicator,
+    ActivityIndicator, Platform,
 } from 'react-native';
-import {collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, orderBy, Timestamp,} from 'firebase/firestore';
+import {
+    collection,
+    query,
+    where,
+    onSnapshot,
+    doc,
+    updateDoc,
+    deleteDoc,
+    Timestamp,
+} from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/constants/firebaseConfig';
-import { Calendar, DateData } from 'react-native-calendars';
+import {ensureNotificationChannels, requestNotificationPermission} from "@/services/NotificationService";
+import * as Notifications from 'expo-notifications';
 
 type Priority = 'high' | 'medium' | 'low';
+
 
 interface Task {
     id: string;
@@ -35,7 +46,7 @@ interface TaskListScreenProps {
     navigation: any;
 }
 
-/* --------- Local Y-M-D helper to avoid UTC date shifts ---------- */
+/** Local Y-M-D helper to avoid UTC date shifts */
 const fmtYMD = (d: Date) => {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -49,44 +60,55 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     const [filter, setFilter] = useState<'all' | 'today' | 'overdue'>('all');
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
+    const [now, setNow] = useState(new Date());
+
+    useEffect(() => {
+        const id = setInterval(() => setNow(new Date()), 30_000); // update every 30s
+        return () => clearInterval(id);
+    }, []);
+
+    const timeLabel = useMemo(
+        () => now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        [now]
+    );
+    const dateLabel = useMemo(
+        () => now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }),
+        [now]
+    );
+
     const todayStr = useMemo(() => fmtYMD(new Date()), []);
 
-    // Live auth + live Firestore with dynamic query per filter/selectedDate
+    async function testLocalIn10s() {
+        await requestNotificationPermission();
+        await ensureNotificationChannels();
+        await Notifications.scheduleNotificationAsync({
+            content: { title: 'Test', body: 'This should appear in ~10s' },
+            //@ts-ignore
+            trigger: Platform.select({
+                ios:    { seconds: 10 },
+                android:{ channelId: 'tasks', seconds: 10 }, // ensure you created 'tasks' channel
+            }),
+        });
+    }
+
     useEffect(() => {
         let unsubTasks: undefined | (() => void);
-        let currentUid: string | null = null;
 
         const unsubAuth = onAuthStateChanged(auth, (user) => {
             if (!user) {
-                currentUid = null;
                 setTasks([]);
                 setLoading(false);
                 if (unsubTasks) unsubTasks();
                 return;
             }
 
-            currentUid = user.uid;
             setLoading(true);
 
-            const constraints: any[] = [where('userId', '==', user.uid)];
-
-            if (selectedDate) {
-                // Specific calendar date
-                constraints.push(where('dueDate', '==', selectedDate));
-                constraints.push(orderBy('createdAt', 'desc')); // may require index
-            } else if (filter === 'today') {
-                constraints.push(where('dueDate', '==', todayStr));
-                constraints.push(orderBy('createdAt', 'desc')); // may require index
-            } else if (filter === 'overdue') {
-                // overdue = before today and not completed
-                constraints.push(where('dueDate', '<', todayStr));
-                constraints.push(where('isCompleted', '==', false));
-                constraints.push(orderBy('dueDate', 'asc'));
-            } else {
-                constraints.push(orderBy('createdAt', 'desc'));
-            }
-
-            const q = query(collection(db, 'tasks'), ...constraints,orderBy('createdAt', 'desc') );
+            // Simple index: userId equality + createdAt order
+            const q = query(
+                collection(db, 'tasks'),
+                where('userId', '==', user.uid)
+            );
 
             if (unsubTasks) unsubTasks();
             unsubTasks = onSnapshot(
@@ -94,6 +116,14 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
                 (qs) => {
                     const fetched: Task[] = [];
                     qs.forEach((d) => fetched.push({ id: d.id, ...(d.data() as any) }));
+
+                    // sort by createdAt desc on the client
+                    fetched.sort((a, b) => {
+                        const av = (a.createdAt as any)?.toMillis?.() ?? 0;
+                        const bv = (b.createdAt as any)?.toMillis?.() ?? 0;
+                        return bv - av;
+                    });
+
                     setTasks(fetched);
                     setLoading(false);
                 },
@@ -109,7 +139,44 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
             unsubAuth();
             if (unsubTasks) unsubTasks();
         };
-    }, [filter, selectedDate, todayStr]);
+    }, []);
+
+    /** Client-side filters to avoid composite indexes */
+    const baseFiltered = useMemo(() => {
+        switch (filter) {
+            case 'today':
+                return tasks.filter((t) => t.dueDate === todayStr);
+            case 'overdue':
+                return tasks.filter((t) => t.dueDate < todayStr && !t.isCompleted);
+            default:
+                return tasks;
+        }
+    }, [tasks, filter, todayStr]);
+
+    const visibleTasks = useMemo(
+        () => (selectedDate ? baseFiltered.filter((t) => t.dueDate === selectedDate) : baseFiltered),
+        [baseFiltered, selectedDate]
+    );
+
+    /** Counts always based on the full task list */
+    const allCount = tasks.length;
+    const todayCount = tasks.filter((t) => t.dueDate === todayStr).length;
+    const overdueCount = tasks.filter((t) => t.dueDate < todayStr && !t.isCompleted).length;
+
+    /** Calendar marks from *all* tasks; selected date highlighted */
+    const marks = useMemo(() => {
+        const map: Record<string, { marked: boolean; dotColor?: string; selected?: boolean }> = {};
+        tasks.forEach((t) => {
+            map[t.dueDate] = {
+                ...(map[t.dueDate] || { marked: true }),
+                dotColor: t.isCompleted ? '#9acd32' : '#007AFF',
+            };
+        });
+        if (selectedDate) {
+            map[selectedDate] = { ...(map[selectedDate] || { marked: true }), selected: true };
+        }
+        return map;
+    }, [tasks, selectedDate]);
 
     const getPriorityColor = (priority: Priority | string) => {
         switch (priority) {
@@ -155,26 +222,6 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
         ]);
     };
 
-    // Counts are based on the currently fetched scope (server-filtered) or you can compute via todayStr
-    const allCount = tasks.length;
-    const todayCount = tasks.filter((t) => t.dueDate === todayStr).length;
-    const overdueCount = tasks.filter((t) => t.dueDate < todayStr && !t.isCompleted).length;
-
-    // Calendar marked dates use current tasks (you can keep a separate "all tasks" listener if you prefer)
-    const marks = useMemo(() => {
-        const map: Record<string, { marked: boolean; dotColor?: string; selected?: boolean }> = {};
-        tasks.forEach((t) => {
-            map[t.dueDate] = {
-                ...(map[t.dueDate] || { marked: true }),
-                dotColor: t.isCompleted ? '#9acd32' : '#007AFF',
-            };
-        });
-        if (selectedDate) {
-            map[selectedDate] = { ...(map[selectedDate] || { marked: true }), selected: true };
-        }
-        return map;
-    }, [tasks, selectedDate]);
-
     const formatTime = (timeString: string) => {
         const [hours, minutes] = timeString.split(':');
         const hour = parseInt(hours, 10);
@@ -201,7 +248,7 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     const renderTask = ({ item }: { item: Task }) => (
         <TouchableOpacity
             style={[styles.taskItem, item.isCompleted && styles.completedTaskItem]}
-            onPress={() => navigation.navigate('AddEditTask', { task: item })}
+            onPress={() => navigation?.navigate?.('AddEditTask', { task: item })}
             onLongPress={() => deleteTask(item.id)}
         >
             <View style={styles.taskContent}>
@@ -241,30 +288,32 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
         <View style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>My Tasks</Text>
-                <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('AddEditTask')}>
-                    <Text style={styles.addButtonText}>+</Text>
+                <View style={styles.headerLeft}>
+                    <Text style={styles.headerTitle}>My Tasks</Text>
+                    <Text style={styles.headerSub}>{dateLabel}</Text>
+                </View>
+
+                <TouchableOpacity
+                    style={[styles.addButton, { marginRight: 8, backgroundColor: '#34C759' }]}
+                    onPress={testLocalIn10s}
+                >
+                    <Text style={styles.addButtonText}>🔔</Text>
                 </TouchableOpacity>
+
+                <View style={styles.headerRight}>
+                    <TouchableOpacity style={styles.timePill} disabled>
+                        <Text style={styles.timePillText}>{timeLabel}</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.addButton}
+                        onPress={() => navigation?.navigate?.('AddEditTask')}
+                    >
+                        <Text style={styles.addButtonText}>+</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
-            {/* Calendar + clear-date helper */}
-            <View style={{ backgroundColor: '#fff' }}>
-                <Calendar
-                    markedDates={marks as any}
-                    onDayPress={(day: DateData) => {
-                        setSelectedDate((prev) => (prev === day.dateString ? null : day.dateString));
-                    }}
-                    theme={{ selectedDayBackgroundColor: '#007AFF' }}
-                />
-                {selectedDate && (
-                    <TouchableOpacity
-                        onPress={() => setSelectedDate(null)}
-                        style={{ alignSelf: 'flex-end', padding: 12 }}
-                    >
-                        <Text style={{ color: '#007AFF', fontWeight: '600' }}>Clear date</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
 
             {/* Filters */}
             <View style={styles.filterContainer}>
@@ -278,9 +327,7 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
                     style={[styles.filterButton, filter === 'today' && styles.activeFilter]}
                     onPress={() => setFilter('today')}
                 >
-                    <Text style={[styles.filterText, filter === 'today' && styles.activeFilterText]}>
-                        Today ({todayCount})
-                    </Text>
+                    <Text style={[styles.filterText, filter === 'today' && styles.activeFilterText]}>Today ({todayCount})</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.filterButton, filter === 'overdue' && styles.activeFilter]}
@@ -293,7 +340,7 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
             </View>
 
             {/* List */}
-            {tasks.length === 0 ? (
+            {visibleTasks.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Text style={styles.emptyText}>
                         {selectedDate
@@ -314,7 +361,7 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
                 </View>
             ) : (
                 <FlatList
-                    data={tasks}
+                    data={visibleTasks}
                     keyExtractor={(item) => item.id}
                     renderItem={renderTask}
                     style={styles.taskList}
@@ -340,6 +387,18 @@ const styles = StyleSheet.create({
         borderBottomColor: '#e0e0e0',
     },
     headerTitle: { fontSize: 20, fontWeight: 'bold' },
+    headerLeft: { flexDirection: 'column' },
+    headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    headerSub: { marginTop: 4, color: '#666', fontSize: 13, fontWeight: '500' },
+    timePill: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        backgroundColor: '#eef3ff',
+        borderWidth: 1,
+        borderColor: '#d6e2ff',
+    },
+    timePillText: { color: '#007AFF', fontWeight: '600', fontSize: 13 },
     addButton: {
         width: 40,
         height: 40,

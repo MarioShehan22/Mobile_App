@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { useState } from "react";
 import SplashScreen from "@/components/ui/screen/SplashScreen";
+import LoginScreen from "@/components/ui/screen/security/LoginScreen";
 import StackNavigator from "@/app/navigation/stack-navigtion/StackNavigator";
 
 export default function HomeScreen() {

@@ -15,13 +15,10 @@ export default function LoginScreen({ navigation }: any) {
             Alert.alert('Error', 'Please enter both email and password');
             return;
         }
-
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-
-            console.log('User logged in:', user.email);
-            // You can store user info in AsyncStorage if needed
+            Alert.alert('Success', `Welcome ${user.email}`);
             navigation.navigate('Process');
         } catch (error: any) {
             console.error(error);
