@@ -1,6 +1,5 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
 
 // Show alerts in foreground too (both iOS & Android)
 Notifications.setNotificationHandler({
@@ -35,7 +34,10 @@ export async function ensureNotificationChannels() {
     // your "tasks" channel (higher priority)
     await Notifications.setNotificationChannelAsync('tasks', {
         name: 'Task Alerts',
+        description: 'Reminders and task-related alerts',
         importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 300, 150, 300],
+        lightColor: '#007AFF',
     });
 }
 
@@ -65,17 +67,16 @@ export async function scheduleTaskAlarms(task: {
     const ids: Record<string, string> = {};
 
     const schedule = async (when: Date, subtitle: string) => {
-        const at = futureDate(when);
+        //const at = futureDate(when);
         return Notifications.scheduleNotificationAsync({
             content: {
-                title: 'Task Reminder',
-                body: `${task.title} — ${subtitle}`,
+                title: `⏰ ${task.title}`,
+                categoryIdentifier: 'TASK_REMINDER',
+                sound: 'default',
             },
             // IMPORTANT: use object trigger; add channelId for Android
             // @ts-ignore types accept channelId on Android
-            trigger: Platform.OS === 'android'
-                ? { channelId: 'tasks', date: at }
-                : { date: at },
+            trigger: { seconds: 5 * 60, channelId: Platform.OS === 'android' ? 'tasks' : undefined },
         });
     };
 

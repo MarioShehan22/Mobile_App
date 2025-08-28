@@ -1,30 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-    View,
-    Text,
-    FlatList,
-    TouchableOpacity,
-    StyleSheet,
-    Alert,
-    ActivityIndicator, Platform,
-} from 'react-native';
-import {
-    collection,
-    query,
-    where,
-    onSnapshot,
-    doc,
-    updateDoc,
-    deleteDoc,
-    Timestamp,
-} from 'firebase/firestore';
+import {View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Platform,} from 'react-native';
+import {collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, Timestamp,} from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/constants/firebaseConfig';
 import {ensureNotificationChannels, requestNotificationPermission} from "@/services/NotificationService";
 import * as Notifications from 'expo-notifications';
 
 type Priority = 'high' | 'medium' | 'low';
-
 
 interface Task {
     id: string;
@@ -82,7 +64,7 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
         await requestNotificationPermission();
         await ensureNotificationChannels();
         await Notifications.scheduleNotificationAsync({
-            content: { title: 'Test', body: 'This should appear in ~10s' },
+            content: { title: 'Software Engineering Theory Exam', body: 'The exam is in 1 hour' },
             //@ts-ignore
             trigger: Platform.select({
                 ios:    { seconds: 10 },
