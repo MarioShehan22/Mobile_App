@@ -1,9 +1,12 @@
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { Text, TextInput } from 'react-native-paper';
 import { useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Color } from '@/constants/Colors';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/constants/firebaseConfig';
+// @ts-ignore
+import logo from '../../../../assets/images/logo/logo.png';
 
 export default function LoginScreen({ navigation }: any) {
     const [email, setEmail] = useState('');
@@ -27,57 +30,68 @@ export default function LoginScreen({ navigation }: any) {
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.logoWrapper}>
-                <Text style={styles.headerText}>Log In</Text>
-            </View>
-            <View style={styles.content}>
-                <View style={styles.formGroup}>
-                    <View style={styles.inputContainer}>
-                        <TextInput
-                            label="Email"
-                            left={<TextInput.Icon icon="email-outline" />}
-                            value={email}
-                            mode="outlined"
-                            style={styles.input}
-                            onChangeText={setEmail}
-                            contentStyle={styles.inputContent}
-                        />
-                    </View>
+        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+            <View style={styles.card}>
+                {/* Logo */}
+                <View style={styles.logoWrapper}>
+                    <Image source={logo} style={styles.logo} resizeMode="contain" />
                 </View>
 
+                {/* Header */}
+                <Text style={styles.headerText}>Welcome Back 👋</Text>
+                <Text style={styles.subText}>Log in to continue</Text>
+
+                {/* Email */}
                 <View style={styles.formGroup}>
-                    <View style={styles.inputContainer}>
-                        <TextInput
-                            value={password}
-                            onChangeText={setPassword}
-                            label="Password"
-                            left={<TextInput.Icon icon="lock-outline" />}
-                            secureTextEntry={!passwordVisible}
-                            mode="outlined"
-                            style={styles.input}
-                            contentStyle={styles.inputContent}
-                            right={
-                                <TextInput.Icon
-                                    icon={passwordVisible ? 'eye-off' : 'eye'}
-                                    onPress={() => setPasswordVisible(!passwordVisible)}
-                                    color="#888"
-                                />
-                            }
-                        />
-                    </View>
+                    <TextInput
+                        label="Email"
+                        left={<TextInput.Icon icon="email-outline" />}
+                        value={email}
+                        mode="outlined"
+                        style={styles.input}
+                        onChangeText={setEmail}
+                        contentStyle={styles.inputContent}
+                    />
                 </View>
 
+                {/* Password */}
+                <View style={styles.formGroup}>
+                    <TextInput
+                        value={password}
+                        onChangeText={setPassword}
+                        label="Password"
+                        left={<TextInput.Icon icon="lock-outline" />}
+                        secureTextEntry={!passwordVisible}
+                        mode="outlined"
+                        style={styles.input}
+                        contentStyle={styles.inputContent}
+                        right={
+                            <TextInput.Icon
+                                icon={passwordVisible ? 'eye-off' : 'eye'}
+                                onPress={() => setPasswordVisible(!passwordVisible)}
+                                color="#888"
+                            />
+                        }
+                    />
+                </View>
+
+                {/* Login Button */}
                 <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-                    <Text style={styles.loginButtonText}>Log in</Text>
+                    <LinearGradient colors={['#0066FF', '#4A90E2']} style={styles.gradientButton}>
+                        <Text style={styles.loginButtonText}>Log in</Text>
+                    </LinearGradient>
                 </TouchableOpacity>
 
-                <View style={styles.or_Button}>
-                    <Text style={styles.or_Text}>OR</Text>
+                {/* Divider */}
+                <View style={styles.orWrapper}>
+                    <View style={styles.line} />
+                    <Text style={styles.orText}>OR</Text>
+                    <View style={styles.line} />
                 </View>
 
+                {/* Sign Up Button */}
                 <TouchableOpacity style={styles.signUpButton} onPress={() => navigation.navigate('SignUp')}>
-                    <Text style={styles.signButtonText}>Sign Up</Text>
+                    <Text style={styles.signButtonText}>Create New Account</Text>
                 </TouchableOpacity>
             </View>
         </ScrollView>
@@ -87,76 +101,95 @@ export default function LoginScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: Color.light,
+    },
+    scrollContent: {
+        flexGrow: 1,
+        justifyContent: 'center',
         padding: 20,
-        backgroundColor: Color.light
     },
-    content: {
-        flex: 1,
-        paddingTop: 40,
-    },
-    headerText: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        marginBottom: 30,
-        color: '#222'
+    card: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 24,
+        elevation: 6,
+        shadowColor: '#000',
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
     },
     logoWrapper: {
-        alignItems: "center",
-        marginTop: 20
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    logo: {
+        width: 150,
+        height: 50,
+    },
+    headerText: {
+        fontSize: 26,
+        fontWeight: 'bold',
+        color: '#222',
+        textAlign: 'center',
+    },
+    subText: {
+        fontSize: 14,
+        color: '#666',
+        textAlign: 'center',
+        marginTop: 6,
+        marginBottom: 24,
     },
     formGroup: {
-        marginBottom: 20,
-    },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        marginBottom: 18,
     },
     input: {
-        flex: 1,
         backgroundColor: 'transparent',
-        height: 40,
-        padding: 0,
-        justifyContent: 'center',
     },
     inputContent: {
         paddingLeft: 0,
         paddingRight: 0,
     },
     loginButton: {
-        backgroundColor: '#0066FF',
-        borderRadius: 8,
+        marginTop: 10,
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    gradientButton: {
         height: 50,
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 30,
     },
     loginButtonText: {
-        color: '#FFFFFF',
+        color: '#fff',
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: '600',
     },
-    or_Button: {
+    orWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 30,
+        marginVertical: 25,
     },
-    or_Text: {
+    line: {
+        flex: 1,
+        height: 1,
+        backgroundColor: '#ddd',
+    },
+    orText: {
         marginHorizontal: 10,
         color: '#888',
         fontWeight: '500',
     },
     signUpButton: {
-        backgroundColor: Color.darkGray,
-        borderRadius: 8,
+        borderColor: '#0066FF',
+        borderWidth: 1.5,
+        borderRadius: 10,
         height: 50,
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 30,
     },
     signButtonText: {
-        color: Color.light,
-        fontSize: 16,
-        fontWeight: '500',
-    }
+        color: '#0066FF',
+        fontSize: 15,
+        fontWeight: '600',
+    },
 });

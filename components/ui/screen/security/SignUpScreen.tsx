@@ -1,17 +1,18 @@
 import { useState } from "react";
-import {Image, ScrollView, StyleSheet, Text, TouchableOpacity, View }from "react-native";
-import { Icon, TextInput } from "react-native-paper";
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { TextInput } from "react-native-paper";
+import { LinearGradient } from "expo-linear-gradient";
 import { Color } from "@/constants/Colors";
 // @ts-ignore
-import logo from '../../../../assets/images/logo/logo.png';
+import logo from "../../../../assets/images/logo/logo.png";
 import { auth } from "@/constants/firebaseConfig";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 export default function SignUpScreen({ navigation }: any) {
-    const [email, setEmail] = useState('');
+    const [email, setEmail] = useState("");
     const [passwordVisible, setPasswordVisible] = useState(false);
-    const [password, setPassword] = useState('');
-    const [displayName, setDisplayName] = useState('');
+    const [password, setPassword] = useState("");
+    const [displayName, setDisplayName] = useState("");
 
     const handleSignUp = async () => {
         if (!email || !password || !displayName) {
@@ -23,13 +24,11 @@ export default function SignUpScreen({ navigation }: any) {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            await updateProfile(user, {
-                displayName: displayName
-            });
+            await updateProfile(user, { displayName });
 
             console.log("User created:", user);
             alert("Account created successfully!");
-            navigation.navigate('Login');
+            navigation.navigate("Login");
         } catch (error: any) {
             console.error("Signup error:", error);
             alert(error.message);
@@ -37,25 +36,26 @@ export default function SignUpScreen({ navigation }: any) {
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.logoWrapper}>
-                <Text style={styles.headerText}>Sign Up</Text>
-                <Image source={logo} style={styles.logo} resizeMode={'contain'} />
-            </View>
-            <View style={styles.inputOuter}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+            <View style={styles.card}>
+                <View style={styles.logoWrapper}>
+                    <Image source={logo} style={styles.logo} resizeMode="contain" />
+                    <Text style={styles.headerText}>Create Account</Text>
+                    <Text style={styles.subText}>Join us and get started 🚀</Text>
+                </View>
+
                 <View style={styles.formGroup}>
                     <TextInput
                         label="Email"
                         left={<TextInput.Icon icon="email-outline" />}
-                        mode='outlined'
+                        mode="outlined"
                         style={styles.input}
-                        activeUnderlineColor="transparent"
-                        underlineColor="transparent"
                         contentStyle={styles.inputContent}
                         value={email}
                         onChangeText={setEmail}
                     />
                 </View>
+
                 <View style={styles.formGroup}>
                     <TextInput
                         value={password}
@@ -63,14 +63,12 @@ export default function SignUpScreen({ navigation }: any) {
                         label="Password"
                         left={<TextInput.Icon icon="lock-outline" />}
                         secureTextEntry={!passwordVisible}
-                        mode='outlined'
+                        mode="outlined"
                         style={styles.input}
-                        underlineColor="transparent"
-                        activeUnderlineColor="transparent"
                         contentStyle={styles.inputContent}
                         right={
                             <TextInput.Icon
-                                icon={passwordVisible ? 'eye-off' : 'eye'}
+                                icon={passwordVisible ? "eye-off" : "eye"}
                                 onPress={() => setPasswordVisible(!passwordVisible)}
                                 color="#888"
                                 size={20}
@@ -78,50 +76,35 @@ export default function SignUpScreen({ navigation }: any) {
                         }
                     />
                 </View>
+
                 <View style={styles.formGroup}>
                     <TextInput
                         left={<TextInput.Icon icon="account-outline" />}
-                        mode='outlined'
+                        mode="outlined"
                         style={styles.input}
-                        activeUnderlineColor="transparent"
-                        underlineColor="transparent"
                         contentStyle={styles.inputContent}
-                        label="User name"
+                        label="Username"
                         value={displayName}
                         onChangeText={setDisplayName}
                     />
                 </View>
-                <TouchableOpacity
-                    style={styles.loginButton}
-                    onPress={handleSignUp}
-                >
-                    <Text style={styles.loginText}>
-                        Sign Up
-                    </Text>
+
+                {/* Sign Up Button */}
+                <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
+                    <LinearGradient colors={["#0066FF", "#4A90E2"]} style={styles.gradientButton}>
+                        <Text style={styles.signUpText}>Sign Up</Text>
+                    </LinearGradient>
                 </TouchableOpacity>
 
-                <Text style={styles.separateText}>OR</Text>
+                <View style={styles.orWrapper}>
+                    <View style={styles.line} />
+                    <Text style={styles.orText}>OR</Text>
+                    <View style={styles.line} />
+                </View>
 
-                {/*<View style={styles.socialLoginWrapper}>*/}
-                {/*    <TouchableOpacity style={styles.iconOuter}>*/}
-                {/*        <Icon size={20} source={'google'} />*/}
-                {/*    </TouchableOpacity>*/}
-                {/*    <TouchableOpacity style={styles.iconOuter}>*/}
-                {/*        <Icon size={20} source={'facebook'} />*/}
-                {/*    </TouchableOpacity>*/}
-                {/*    <TouchableOpacity style={styles.iconOuter}>*/}
-                {/*        <Icon size={20} source={'twitter'} />*/}
-                {/*    </TouchableOpacity>*/}
-                {/*    <TouchableOpacity style={styles.iconOuter}>*/}
-                {/*        <Icon size={20} source={'instagram'} />*/}
-                {/*    </TouchableOpacity>*/}
-                {/*</View>*/}
-
-                <TouchableOpacity
-                    style={{ ...styles.loginButton, backgroundColor: Color.primary }}
-                    onPress={() => navigation.navigate('Login')}
-                >
-                    <Text style={styles.loginText}>Already have an Account</Text>
+                {/* Already have account */}
+                <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate("Login")}>
+                    <Text style={styles.secondaryText}>Already have an account? Log In</Text>
                 </TouchableOpacity>
             </View>
         </ScrollView>
@@ -129,68 +112,96 @@ export default function SignUpScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-    headerText: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        marginBottom: 30,
-        color: '#222'
+    container: {
+        flex: 1,
+        backgroundColor: Color.light,
     },
-    loginText: {
-        color: Color.light
+    scrollContent: {
+        flexGrow: 1,
+        justifyContent: "center",
+        padding: 20,
     },
-    loginButton: {
-        backgroundColor: Color.blue,
-        height: 50,
-        marginTop: 30,
-        borderRadius: 3,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    logo: {
-        width: 200,
-        height: 60
+    card: {
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 24,
+        elevation: 6,
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
     },
     logoWrapper: {
         alignItems: "center",
-        marginTop: 20
+        marginBottom: 20,
     },
-    container: {
-        flex: 1,
-        padding: 10,
-        backgroundColor: Color.light
-    },
-    formGroup: {
+    logo: {
+        width: 150,
+        height: 50,
         marginBottom: 10,
     },
-    inputOuter: {
-        marginTop: 50,
+    headerText: {
+        fontSize: 24,
+        fontWeight: "bold",
+        color: "#222",
+    },
+    subText: {
+        fontSize: 14,
+        color: "#666",
+        marginTop: 4,
+        textAlign: "center",
+    },
+    formGroup: {
+        marginBottom: 18,
     },
     input: {
-        flex: 1,
-        backgroundColor: 'transparent',
-        height: 40,
-        padding: 0,
-        justifyContent: 'center',
+        backgroundColor: "transparent",
     },
     inputContent: {
         paddingLeft: 0,
         paddingRight: 0,
     },
-    iconOuter: {
-        backgroundColor: Color.darkGray,
-        width: 50,
+    signUpButton: {
+        marginTop: 10,
+        borderRadius: 10,
+        overflow: "hidden",
+    },
+    gradientButton: {
         height: 50,
-        borderRadius: 50,
-        alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: "center",
+        alignItems: "center",
     },
-    socialLoginWrapper: {
-        flexDirection: 'row',
-        marginTop: 20,
-        justifyContent: 'space-around',
+    signUpText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "600",
     },
-    separateText: {
-        textAlign: 'center',
-        marginTop: 20
+    orWrapper: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginVertical: 25,
+    },
+    line: {
+        flex: 1,
+        height: 1,
+        backgroundColor: "#ddd",
+    },
+    orText: {
+        marginHorizontal: 10,
+        color: "#888",
+        fontWeight: "500",
+    },
+    secondaryButton: {
+        borderColor: "#0066FF",
+        borderWidth: 1.5,
+        borderRadius: 10,
+        height: 50,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    secondaryText: {
+        color: "#0066FF",
+        fontSize: 15,
+        fontWeight: "600",
     },
 });

@@ -59,6 +59,7 @@ export default function HomeBottomTabNavigation({navigation}: any) {
                 component={TaskListScreen}
                 options={{
                     headerTitle: '',
+                    headerShown: false
                 }}
             />
             <Tab.Screen
@@ -66,6 +67,7 @@ export default function HomeBottomTabNavigation({navigation}: any) {
                 component={CalendarTaskScreen}
                 options={{
                     headerTitle: '',
+                    headerShown: false
                 }}
             />
             <Tab.Screen
@@ -73,6 +75,7 @@ export default function HomeBottomTabNavigation({navigation}: any) {
                 component={WeatherScreen}
                 options={{
                     headerTitle: '',
+                    headerShown: false
                 }}
             />
             <Tab.Screen
@@ -80,6 +83,7 @@ export default function HomeBottomTabNavigation({navigation}: any) {
                 component={LocationPickerScreen}
                 options={{
                     headerTitle: '',
+                    headerShown: false
                 }}
             />
             <Tab.Screen

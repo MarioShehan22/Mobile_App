@@ -1,20 +1,29 @@
 import React, { useState } from "react";
-import {View, Text, TextInput, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator} from "react-native";
+import {
+    View,
+    Text,
+    TextInput,
+    StyleSheet,
+    TouchableOpacity,
+    Image,
+    Alert,
+    ActivityIndicator,
+} from "react-native";
 import { auth } from "@/constants/firebaseConfig";
 import { updateProfile, updatePassword, signOut } from "firebase/auth";
+import { LinearGradient } from "expo-linear-gradient";
 import { Color } from "@/constants/Colors";
 
 export default function ProfileScreen({ navigation }: any) {
     const user = auth.currentUser;
 
     const [displayName, setDisplayName] = useState(user?.displayName || "");
-    const [email, setEmail] = useState(user?.email || "");
+    const [email] = useState(user?.email || "");
     const [newPassword, setNewPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleUpdate = async () => {
         if (!user) return;
-
         setLoading(true);
 
         try {
@@ -41,7 +50,8 @@ export default function ProfileScreen({ navigation }: any) {
 
     return (
         <View style={styles.container}>
-            <View style={styles.avatarWrapper}>
+            {/* Profile Card */}
+            <View style={styles.profileCard}>
                 <Image
                     source={{
                         uri:
@@ -54,13 +64,16 @@ export default function ProfileScreen({ navigation }: any) {
                 <Text style={styles.email}>{email}</Text>
             </View>
 
-            <View style={styles.inputGroup}>
+            {/* Inputs */}
+            <View style={styles.formCard}>
                 <Text style={styles.label}>Display Name</Text>
                 <TextInput
                     style={styles.input}
                     value={displayName}
                     onChangeText={setDisplayName}
+                    placeholder="Enter your name"
                 />
+
                 <Text style={styles.label}>New Password</Text>
                 <TextInput
                     style={styles.input}
@@ -71,18 +84,25 @@ export default function ProfileScreen({ navigation }: any) {
                 />
             </View>
 
+            {/* Update Button */}
             <TouchableOpacity
                 style={styles.updateButton}
                 onPress={handleUpdate}
                 disabled={loading}
             >
-                {loading ? (
-                    <ActivityIndicator color="#fff" />
-                ) : (
-                    <Text style={styles.updateButtonText}>Update Profile</Text>
-                )}
+                <LinearGradient
+                    colors={["#0066FF", "#4A90E2"]}
+                    style={styles.gradientButton}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.updateButtonText}>Update Profile</Text>
+                    )}
+                </LinearGradient>
             </TouchableOpacity>
 
+            {/* Logout */}
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                 <Text style={styles.logoutText}>Log Out</Text>
             </TouchableOpacity>
@@ -91,48 +111,70 @@ export default function ProfileScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 24, backgroundColor: "#f9f9f9" },
-    avatarWrapper: {
+    container: { flex: 1, padding: 20, backgroundColor: "#f4f6fa" },
+
+    profileCard: {
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        paddingVertical: 30,
         alignItems: "center",
-        marginBottom: 30,
+        marginBottom: 25,
+        elevation: 4,
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
     },
     avatar: {
-        width: 90,
-        height: 90,
-        borderRadius: 45,
-        marginBottom: 10,
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        marginBottom: 12,
     },
     name: {
-        fontSize: 20,
-        fontWeight: "600",
-        color: Color.primary || "#333",
+        fontSize: 22,
+        fontWeight: "700",
+        color: "#222",
     },
     email: {
         fontSize: 14,
         color: "#777",
         marginTop: 4,
     },
-    inputGroup: {
-        marginBottom: 24,
+
+    formCard: {
+        backgroundColor: "#fff",
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 20,
+        elevation: 3,
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 3 },
     },
     label: {
         fontSize: 14,
         color: "#444",
-        marginBottom: 4,
-        marginTop: 16,
+        marginBottom: 6,
+        marginTop: 12,
     },
     input: {
-        backgroundColor: "#fff",
+        backgroundColor: "#f9f9f9",
         borderWidth: 1,
         borderColor: "#ddd",
-        borderRadius: 6,
-        padding: 10,
+        borderRadius: 8,
+        padding: 12,
         fontSize: 16,
     },
+
     updateButton: {
-        backgroundColor: Color.blue,
-        paddingVertical: 14,
-        borderRadius: 6,
+        borderRadius: 10,
+        overflow: "hidden",
+    },
+    gradientButton: {
+        height: 50,
+        justifyContent: "center",
         alignItems: "center",
     },
     updateButtonText: {
@@ -140,13 +182,18 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "600",
     },
+
     logoutButton: {
         marginTop: 20,
         alignItems: "center",
+        borderColor: "#e53935",
+        borderWidth: 1.5,
+        borderRadius: 8,
+        paddingVertical: 12,
     },
     logoutText: {
         color: "#e53935",
         fontSize: 15,
-        fontWeight: "500",
+        fontWeight: "600",
     },
 });
