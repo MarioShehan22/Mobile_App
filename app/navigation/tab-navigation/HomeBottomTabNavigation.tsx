@@ -23,7 +23,6 @@ export default function HomeBottomTabNavigation({navigation}: any) {
         loadToken();
     }, []);
 
-    // @ts-ignore
     return (
         <Tab.Navigator
             initialRouteName="Tasks"
@@ -49,17 +48,40 @@ export default function HomeBottomTabNavigation({navigation}: any) {
                             break;
                     }
 
-                    // @ts-ignore
-                    return <Ionicons name={iconName} size={20} color={color} />;
+                    return <Ionicons name={iconName as any} size={20} color={color} />;
                 },
                 tabBarActiveTintColor: Color.blue,
                 tabBarInactiveTintColor: Color.darkGray,
             })}
         >
-            <Tab.Screen name="Tasks" component={TaskListScreen} />
-            <Tab.Screen name="Calendar" component={CalendarTaskScreen} />
-            <Tab.Screen name="Weather" component={WeatherScreen} />
-            <Tab.Screen name="Location" component={LocationPickerScreen} />
+            <Tab.Screen
+                name="Tasks"
+                component={TaskListScreen}
+                options={{
+                    headerTitle: '',
+                }}
+            />
+            <Tab.Screen
+                name="Calendar"
+                component={CalendarTaskScreen}
+                options={{
+                    headerTitle: '',
+                }}
+            />
+            <Tab.Screen
+                name="Weather"
+                component={WeatherScreen}
+                options={{
+                    headerTitle: '',
+                }}
+            />
+            <Tab.Screen
+                name="Location"
+                component={LocationPickerScreen}
+                options={{
+                    headerTitle: '',
+                }}
+            />
             <Tab.Screen
                 name="Profile"
                 component={ProfileScreen}
@@ -129,4 +151,4 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 20,
     }
-})
+});

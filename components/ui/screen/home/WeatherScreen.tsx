@@ -1,16 +1,16 @@
+import * as Location from 'expo-location';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    Image,
     ActivityIndicator,
     Alert,
-    ScrollView,
+    Image,
     RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
     TouchableOpacity,
+    View,
 } from 'react-native';
-import * as Location from 'expo-location';
 
 const OPEN_WEATHER_API_KEY = '01e187216ba4a2dcc1712a4d95b70b56';
 
@@ -243,7 +243,7 @@ export default function WeatherScreen({ route }: WeatherScreenProps) {
                     <Text style={{ marginTop: 8, color: '#6b7280' }}>Loading weather…</Text>
                 </View>
             ) : now ? (
-                <>
+                <View>
                     {/* Current card */}
                     <View style={styles.currentCard}>
                         <View style={{ alignItems: 'center' }}>
@@ -328,7 +328,7 @@ export default function WeatherScreen({ route }: WeatherScreenProps) {
                             ))}
                         </View>
                     )}
-                </>
+                </View>
             ) : (
                 <View style={styles.loadingCard}>
                     <Text style={{ color: '#6b7280' }}>No weather data</Text>
